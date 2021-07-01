@@ -4,6 +4,7 @@ from random import seed
 from random import randint
 import itertools
 import serial
+import socket
 
 
 square_step = 400
@@ -16,7 +17,7 @@ colours.append((255,255,255))
 colours = list(set(colours))
 
 error_y = []
-# feedback_start = []
+feedback_start = []
 
 cross = pygame.image.load('cross.png')
 tick = pygame.image.load('tick.png')
@@ -34,8 +35,6 @@ def draw_rects(surface, colour, colour2, square_direction):
     pygame.draw.rect(surface, colour2, (715 + (square_step*square_direction*-1), 475, 250, 250))
     pygame.draw.rect(surface, (200,200,200), (740 + (square_step*square_direction*-1), 500, 200, 200))
 
-
-
 def move_circle_down(surface, colour, colour2, x, y, limit, step, square_direction):
     while (y <= limit):
         draw_rects(surface, colour, colour2, square_direction)
@@ -45,7 +44,6 @@ def move_circle_down(surface, colour, colour2, x, y, limit, step, square_directi
         y += step
         pygame.time.delay(1000)
         redraw_bg(surface)
-
 
 def move_circle_horiz(surface, direction, colour, colour2, x, y, step, square_direction):
     redraw_bg(surface)
@@ -62,7 +60,8 @@ def move_circle_horiz(surface, direction, colour, colour2, x, y, step, square_di
 
     pygame.display.update()
     # feedback_start.append(datetime.now()) # Record time
-    arduino.write(b'1')
+    # arduino.write(b'1')
+    sock.sendto(MESSAGE, (UDP_IP, UDP_PORT))
     print("recorded")
 
     pygame.time.delay(1000)
@@ -72,13 +71,13 @@ def move_circle_horiz(surface, direction, colour, colour2, x, y, step, square_di
 def main():
     pygame.init()
 
-    # win = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    win = pygame.display.set_mode((1620, 800))
+    win = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    # win = pygame.display.set_mode((1620, 800))
 
     pygame.display.set_caption("ErrP Experimental paradigm")
 
     run = True
-    trials = 100
+    trials = 200
     origin_x = 840
     origin_y = 100
 
@@ -90,7 +89,7 @@ def main():
 
     while run:
         for i in range(trials):
-            randomiser = (-1)**(randint(1, 10) <= 2) # 30% chance of being the other way
+            randomiser = (-1)**(randint(1, 10) <= 2) # 20% chance of being the other way
             orig_direction = ((-1)**(randint(1, 2) == 2))
             direction = orig_direction * randomiser
 
@@ -120,8 +119,19 @@ def main():
 
 
 if __name__ == '__main__':
-    arduino = serial.Serial(port='/dev/tty.usbmodem14201', baudrate=115200, timeout=.1)
-    print("Connection establised")
+    # arduino = serial.Serial(port='/COM4', baudrate=115200, timeout=.1)
+    # print("Connection establised")
+
+    UDP_IP = "127.0.0.1"
+    UDP_PORT = 1234
+    MESSAGE = b"1"
+
+    print("UDP target IP: %s" % UDP_IP)
+    print("UDP target port: %s" % UDP_PORT)
+    print("message: %s" % MESSAGE)
+
+    sock = socket.socket(socket.AF_INET, # Internet
+                         socket.SOCK_DGRAM) # UDP
 
     main()
     pygame.quit()
